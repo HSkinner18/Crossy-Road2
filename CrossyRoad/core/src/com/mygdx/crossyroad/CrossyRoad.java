@@ -5,6 +5,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
@@ -12,40 +13,50 @@ import java.util.Random;
 
 public class CrossyRoad extends ApplicationAdapter {
 	ShapeRenderer sr;
+	SpriteBatch batch;
+	SpriteBatch batch2;
 	int upperbound = 700;
 	int upperbound2 = 700;
 	int blue = 255;
 	int red = 255;
 	int green = 255;
+	boolean end = false;
 	Random rand = new Random();
 	Color col;
+	int Score = 0;
+	public BitmapFont font;
 
 	Player player;
 	Cars[] cars = new Cars[100];
 	Texture Chicken;
 	Texture Car;
+	Texture badLogic;
 
 	@Override
 	public void create() {
+		batch = new SpriteBatch();
+		batch2 = new SpriteBatch();
+		font = new BitmapFont();
 
 
-		Chicken = new Texture("Chicken.png.png");
-		Car = new Texture("Car.png.png");
+		Chicken = new Texture("Chicken.png");
+		Car = new Texture("Car.png");
+		badLogic = new Texture("badlogic.jpg");
 
 
 		sr = new ShapeRenderer();
-		player = new Player(Gdx.graphics.getWidth() / 2, 10, 10, 10, Chicken);
+		player = new Player(Gdx.graphics.getWidth() / 2, Gdx.graphics.getHeight()/2, 10, 10, Color.BLACK);
 
 		for(int i = 0; i < cars.length; i++){
 			int y = rand.nextInt(upperbound);
 			int x = rand.nextInt(upperbound2);
 
-			if(y < 100){
+			if(y < 375 && y > 325){
 				y = y + 100;
 			}
 			int w = 20;
 			int h = 10;
-			Cars c = new Cars(x, y, w, h, Car);
+			Cars c = new Cars(x, y, w, h, Color.BLACK);
 			cars[i] = c;
 		}
 	}
@@ -56,25 +67,40 @@ public class CrossyRoad extends ApplicationAdapter {
 		playerMovement(5);
 		carMovement();
 		collision();
-		endCondition();
+		carRespawn();
+
 		super.render();
 
-		ScreenUtils.clear(256, 256, 256, 1);
+		ScreenUtils.clear(0, 0, 0, 1);
+
 		sr.begin(ShapeRenderer.ShapeType.Filled);
-		player.draw(sr);
+		batch.begin();
+		font.draw(batch, Score+"", 0, 650);
 
 		for(int i = 0; i < cars.length; i++) {
-			cars[i].draw(sr);
+			batch.draw(Chicken, player.getX(), player.getY());
+			batch.draw(Car, cars[i].getX(), cars[i].getY());
 		}
+
+		if(end == true){
+			if(Score > 10000){
+				batch.draw(badLogic, 0, 0);
+			}
+			ScreenUtils.clear(0, 0, 0, 1);
+			font.draw(batch, "you lose" + "\n" + "Score = " +Score, Gdx.graphics.getWidth()/2, Gdx.graphics.getHeight()/2);
+		}
+		batch.end();
 		sr.end();
 	}
 
 	public void playerMovement(int d) {
-		if (Gdx.input.isKeyPressed(Input.Keys.UP) && player.getY() < 690) {
-			player.setY(player.getY() + d);
-		}
-		if (Gdx.input.isKeyPressed(Input.Keys.DOWN) && player.getY() < 690) {
-			player.setY(player.getY() - d);
+		for (int i = 0; i < cars.length; i++) {
+			if (Gdx.input.isKeyPressed(Input.Keys.UP) && player.getY() < 690) {
+				cars[i].setY(cars[i].getY() - d);
+			}
+			if (Gdx.input.isKeyPressed(Input.Keys.DOWN) && player.getY() < 690) {
+				cars[i].setY(cars[i].getY() + d);
+			}
 		}
 	}
 
@@ -101,18 +127,22 @@ public class CrossyRoad extends ApplicationAdapter {
 
 			if (player.getX() < carRightX && playerRightX > cars[i].getX()) {
 				if (player.getY() < cars[i].getY() + cars[i].getH() && player.getY() + player.getH() > cars[i].getY()) {
-					player.setY(10); // Reset player position on collision
+						end = true;
+					}
 				}
+			}
+		}
+	public void carRespawn(){
+		for (int i = 0; i < cars.length; i++){
+			if(cars[i].getY() < 0){
+				cars[i].setY(cars[i].getY() + 700);
+				Score++;
 			}
 		}
 	}
 
 
-	public void endCondition() {
-		if (player.getY() == Gdx.graphics.getHeight() - 20) {
-			player.setY(10);
-		}
-	}
+
 
 
 	@Override
